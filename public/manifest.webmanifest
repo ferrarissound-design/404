@@ -1,0 +1,11 @@
+{
+  "name": "404号室：帰宅記録",
+  "short_name": "404号室",
+  "description": "深夜のマンションで、自分の記憶を疑う一人称3D心理ホラー（体験版）",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#050607",
+  "theme_color": "#050607",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "room-404",
+  "version": "0.1.0",
+  "private": true,
+  "description": "404号室：帰宅記録 — 一人称3D心理ホラー（体験版）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "node tests/smoke.mjs"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1",
+    "vite": "^8.3.4"
+  }
+}

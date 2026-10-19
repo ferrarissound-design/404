@@ -8,7 +8,9 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test": "node tests/smoke.mjs"
+    "test": "node tests/smoke.mjs && node tests/touch.mjs",
+    "test:smoke": "node tests/smoke.mjs",
+    "test:touch": "node tests/touch.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"

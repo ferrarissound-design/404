@@ -76,12 +76,18 @@ npm run preview
 ```
 
 ### 自動テスト
-`tests/smoke.mjs` は Playwright（ヘッドレス Chromium・ソフトウェアGL）で、タイトル→プロローグ→第1幕→共用廊下→第2幕→第3幕→停電→結末までを内部デバッグ API で進行させ、重大なエラーが出ないこと・各フェーズに到達できること・セーブ/再開が機能することを確認します。
+Playwright（ヘッドレス Chromium・ソフトウェアGL）を使います。
+
+* `tests/smoke.mjs`：タイトル→プロローグ→第1幕→共用廊下→第2幕（判断の分岐）→第3幕→停電→結末までを内部デバッグ API で進行させ、各フェーズへ到達できること・怪奇現象と分岐が状態に反映されること・セーブ/再開が機能すること・全効果音の生成でエラーが出ないこと・実行時エラーがないことを確認します。
+* `tests/touch.mjs`：iPhone 横画面相当のタッチエミュレーションで、仮想スティック移動・視点ドラッグ・タップ調査・ボタン操作・縦画面の案内を確認します。
 
 ```bash
-npm run build && npm run preview &   # 別ターミナルで
-BASE_URL=http://localhost:4173/ npm test
+npm run build && npx vite preview --port 4173 &   # 別ターミナルで
+BASE_URL=http://localhost:4173/ npm test           # smoke + touch
+# ブラウザ実行ファイルを指定する場合: CHROMIUM_PATH=/path/to/chrome
 ```
+
+テスト用に `window.__game` / `window.__dbg`（テレポート・時間加速・対象の直接調査）を公開しています。
 
 #### 自動テストで確認できる範囲 / 実機確認が必要な範囲
 | 自動（CI・ヘッドレス）で確認 | 実機確認が必要 |

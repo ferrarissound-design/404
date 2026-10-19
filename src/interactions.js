@@ -33,6 +33,7 @@ export const H = {
   },
   shoes(g) {
     const s = flat(g).shoes;
+    if (s === 0 && g.S.act >= 2 && g.S.decisions.shoes === 'trust') return g.say(['自分の靴だけだ。', '……さっきの女物の靴は、どこへ行った？']);
     if (s === 0) return g.say('自分の靴だけだ。脱ぎっぱなしにしてしまった。');
     if (s === 1 && g.S.act >= 2) {
       g.say('見覚えのない、女物の靴。……ヒールがすり減っている。');
@@ -72,6 +73,17 @@ export const H = {
   },
   switchToilet(g) {
     toggleLight(g, 'toiletLight', 'switchToilet');
+  },
+
+  // ---------------------------------------------------------------- 寝室のドア（変化への判断）
+  bedDoor(g) {
+    const st = flat(g);
+    if (g.S.act >= 2 && st.bedDoor === 1 && !g.S.decisions.bedDoor) {
+      g.say(['寝室のドアが、少し開いている。', '閉めたはずなのに。']);
+      g.after(3.4, () => decide(g, 'bedDoor', 'ドアが開いている。', '確かに閉めた', '閉め忘れたのかもしれない'));
+      return;
+    }
+    g.useDoor('bed');
   },
 
   // ---------------------------------------------------------------- 廊下
@@ -201,6 +213,10 @@ export const H = {
   },
   async photo(g) {
     const v = flat(g).photo;
+    if (v === 0 && g.S.act >= 2 && g.S.decisions.photo === 'trust') {
+      g.audio.play('click', {});
+      g.say(['写真は、三人で笑っている。', '……元に戻っている。さっきは、確かに——。']);
+    }
     const t = [
       '公園で撮った三人の写真。……いい天気だった。',
       '写真の中の、自分だけが白く飛んでいる。顔が、見えない。',

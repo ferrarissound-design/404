@@ -159,7 +159,9 @@ export class Director {
     const d = g.world.doors.front;
     const P = g.player.pos;
     if (d.target > 0.5) {
-      const inDoorway = Math.abs(P.x) < 0.95 && P.z > -1.25 && P.z < 1.35;
+      const trip = this.S.phase === 'trip1' || this.S.phase === 'trip2';
+      // 廊下イベント中は、敷居の上に立っていない限り、ドアは閉まる（世界を書き換えるため）
+      const inDoorway = trip ? Math.abs(P.x) < 0.6 && P.z > -0.75 && P.z < 1.0 : Math.abs(P.x) < 0.95 && P.z > -1.25 && P.z < 1.35;
       this.doorHold = inDoorway ? 0 : this.doorHold + dt;
       if (this.doorHold > 3.2) {
         d.close(0.38);
@@ -294,8 +296,12 @@ export class Director {
       g.after(5.4, () => g.audio.hums.fridge && g.audio.hums.fridge.setLevel(1));
     }
     // インターホン
-    if (!S.flags.bell && g.log.rooms.ldk > 14 && ((inspected >= 4 && t > 75) || t > 150) && this.inApt && !this.g.overlayOpen) {
+    if (!S.flags.bell && this.inApt && !this.g.overlayOpen && ((g.log.rooms.ldk > 14 && ((inspected >= 4 && t > 75) || t > 150)) || t > 260)) {
       this.ringBell();
+    }
+    if (!S.flags.bell && t > 130 && (g.log.rooms.ldk || 0) < 5 && !this._ldkHint) {
+      this._ldkHint = true;
+      g.ui.objective('リビングの様子を見る', 9000);
     }
     if (S.flags.bell && !S.flags.intercomSeen && t > S.flags.bellAt + 18) {
       if (!this._bellHint) {
@@ -425,6 +431,12 @@ export class Director {
     const g = this.g;
     const S = this.S;
     const P = g.player.pos;
+    // 室内に戻ってしまった場合は、外へ向かうよう促す
+    if (this.inApt && this.tripT > 35 && !this._tripHint) {
+      this._tripHint = true;
+      g.ui.objective('玄関の外を確認する', 9000);
+    }
+    if (!this.inApt) this._tripHint = false;
     if (S.phase === 'trip2') {
       // 足跡が玄関へ続く（フェードイン）→ 到達でエレベーターの扉が開く
       if (!S.flags.elevPanelDone && P.x > 6.4 && !S.flags.elevClosing) {
@@ -585,6 +597,10 @@ export class Director {
     if (!S.flags.summoned && t > 70 && (decs >= 2 || t > 190) && this.inApt && !g.overlayOpen && this.zone !== 'cor') {
       this.summonDoor();
     }
+    if (S.flags.summoned && !S.flags.hint2 && S.phaseT > (S.flags.summonedAt || 0) + 45) {
+      S.flags.hint2 = true;
+      g.ui.objective(HINT.keys, 9000);
+    }
     if (S.flags.summoned && !S.flags.doorSwung) {
       const P = g.player.pos;
       const d = Math.hypot(P.x, P.z - 0.4);
@@ -601,6 +617,7 @@ export class Director {
     const g = this.g;
     const S = this.S;
     S.flags.summoned = true;
+    S.flags.summonedAt = S.phaseT;
     this.busy = true;
     const id = ++this.runId;
     g.audio.silence(4.5, 0.03);
@@ -877,6 +894,7 @@ export class Director {
     if (gz.tag === 'mug' && w.mugs > 1) say('mug', 'マグカップが……増えている？');
     else if (gz.id === 'photo' && w.photo !== 0) say('photo', '写真の様子が、違う。');
     else if (gz.id === 'bedDoor' && w.bedDoor !== 0) say('bedDoor', '寝室のドアが、開いている。');
+    else if (gz.id === 'bedDoor' && w.bedDoor === 0 && S.decisions.bedDoor === 'trust' && S.act >= 3) say('bedDoorBack', ['寝室のドアは、閉まっている。', '……あの隙間は、見間違いだったのか？']);
     else if (gz.tag === 'shoes' && w.shoes > 0) say('shoes', '玄関に、靴が……。');
     else if (gz.id === 'clock' && w.clockMode !== 'normal') say('clock', '時計の針が、おかしい。');
     else if (gz.id === 'drawing' && w.drawing !== 0) say('drawing', '娘の絵が、変わっている……？');

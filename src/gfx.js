@@ -77,6 +77,33 @@ export class MatLib {
     this.defs[name] = def;
   }
 
+  /** 低スペック端末向け：バンプ/発光マップを外してフラグメント負荷を下げる（切替時に1回だけ再コンパイル）*/
+  setLowSpec(low) {
+    if (this.low === low) return;
+    this.low = low;
+    for (const m of this.all) {
+      if (!m.isMeshStandardMaterial) continue;
+      if (low) {
+        if (m.bumpMap) {
+          m.userData.bumpMap = m.bumpMap;
+          m.bumpMap = null;
+        }
+        if (m.emissiveMap) {
+          m.userData.emissiveMap = m.emissiveMap;
+          m.emissiveMap = null;
+          m.emissive.setScalar(0.55);
+        }
+      } else {
+        if (m.userData.bumpMap) m.bumpMap = m.userData.bumpMap;
+        if (m.userData.emissiveMap) {
+          m.emissiveMap = m.userData.emissiveMap;
+          m.emissive.setScalar(1);
+        }
+      }
+      m.needsUpdate = true;
+    }
+  }
+
   /** 任意パラメータのライト付きマテリアル（部屋マスク適用）*/
   custom(params, room = 'hall', envIntensity) {
     // 同一パラメータのマテリアルは共有してドローコールを減らす

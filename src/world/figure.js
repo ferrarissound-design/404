@@ -21,7 +21,7 @@ export function buildSeatedFigure(w, room = 'ldk') {
   const hips = sh(new THREE.BoxGeometry(0.34, 0.18, 0.26), cloth);
   hips.position.set(0, 0.56, 0);
   const torso = sh(new THREE.CapsuleGeometry(0.17, 0.3, 6, 12), cloth);
-  torso.scale.set(1.15, 1, 0.75);
+  torso.scale.set(1.3, 1, 0.78);
   torso.position.set(0, 0.88, 0.02);
   torso.rotation.x = -0.06;
   const neck = sh(new THREE.CylinderGeometry(0.045, 0.05, 0.1, 10), skin);

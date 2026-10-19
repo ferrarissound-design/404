@@ -133,6 +133,7 @@ export class Game {
     this.player.onStep = (surf, vol, side) => this.audio.footstep(surf, vol, side);
 
     await this.world.build((p) => ui.setLoading(0.05 + p * 0.9, ['壁の染みを数えています…', '家具を並べています…', '電気をつけています…'][Math.min(2, Math.floor(p * 3))]));
+    this.world.M.setLowSpec(this.tierName === 'low');
     // スマホライトをカメラに取り付け
     const fl = this.world.lFlash;
     this.camera.add(fl);
@@ -172,6 +173,18 @@ export class Game {
     this.S = newState();
     this.apply({ instant: true });
     this.titleT = 0;
+    // 全シェーダを先にコンパイルして、部屋に入った瞬間のカクつきを防ぐ
+    ui.setLoading(0.96, '空気を整えています…');
+    await nextFrame();
+    try {
+      this.renderer.setRenderTarget(this.post.rt);
+      if (this.renderer.compileAsync) await this.renderer.compileAsync(this.scene, this.camera);
+      else this.renderer.compile(this.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+    } catch (e) {
+      console.warn('shader precompile skipped', e);
+      this.renderer.setRenderTarget(null);
+    }
     ui.setLoading(1, '');
     await sleep(300);
     ui.hideLoading();
@@ -200,6 +213,7 @@ export class Game {
     this.tierName = name;
     this.tier = TIERS[name];
     this.post.setTier(this.tier);
+    this.world.M.setLowSpec(name === 'low');
     const L = this.world.lLDK;
     L.castShadow = this.tier.shadow > 0;
     if (this.tier.shadow > 0) {
@@ -542,6 +556,9 @@ export class Game {
     clearSave();
     const lines = endingLines(kind, S.trust);
     const stats = this.statsHtml(kind);
+    // エンディング画面は黒背景なので、暗転レイヤーは外す（z-index の都合で上に残ると文字が見えない）
+    this.ui.el.fade.style.transition = 'none';
+    this.ui.el.fade.style.opacity = '0';
     this.ui.showHUD(false);
     this.ui.playEnding(lines, stats);
     this.running = false;

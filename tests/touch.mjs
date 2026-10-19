@@ -44,7 +44,13 @@ const ok = (c, m) => {
 const ev = (js) => p.evaluate(js);
 const wait = (ms) => p.waitForTimeout(ms);
 const cdp = await ctx.newCDPSession(p);
-const touch = async (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map((q, i) => ({ x: q.x, y: q.y, id: q.id ?? i })) });
+const touch = async (type, points, timestamp) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map((q, i) => ({ x: q.x, y: q.y, id: q.id ?? i })), ...(timestamp ? { timestamp } : {}) });
+// ソフトウェア描画ではフレームが秒単位で止まることがあるため、タップは時刻を明示して送る
+const tap = async (x, y, id = 9) => {
+  const t0 = Date.now() / 1000;
+  await touch('touchStart', [{ x, y, id }], t0);
+  await touch('touchEnd', [], t0 + 0.06);
+};
 
 await p.goto(BASE);
 await p.waitForSelector('#loading.hidden', { state: 'attached' });
@@ -86,13 +92,9 @@ await wait(30);
 await touch('touchMove', [{ x: 650, y: 210, id: 3 }]);
 await touch('touchEnd', []);
 ok((await ev('window.__game.log.totalInspect')) === ints0, 'ドラッグは調査（タップ）として扱われない');
-// ドアの前でタップ → 調査
-await ev('window.__dbg.teleport(0, 0.9, Math.PI)');
-await ev("window.__game.player.pitch = 0");
-await wait(500);
-// 玄関ドアは背後なので、靴箱の鍵(トレイ)を見る
-await ev('window.__dbg.teleport(-0.2, 0.9, Math.PI / 2 * 1.0, -0.4)');
-await wait(800);
+// リビングのドアの前でタップ → 調査（開閉）
+await ev('window.__dbg.teleport(0, 2.9, Math.PI, -0.05)');
+await wait(1500);
 const target = await ev(`(()=>{const g=window.__game; const r=g.pickAt(innerWidth/2, innerHeight/2, 8); return r? r.it.id : null})()`);
 console.log('   中央のターゲット:', target);
 const btnVisible = await ev("!document.getElementById('interactBtn').classList.contains('hidden')");
@@ -101,10 +103,8 @@ await p.screenshot({ path: `${OUT}/t1_touch.png` });
 if (target) {
   const pos = await ev(`(()=>{const g=window.__game; const r=g.pickAt(innerWidth/2, innerHeight/2, 8); const v=r.hit.point.clone().project(g.camera); return {x:(v.x+1)/2*innerWidth, y:(1-v.y)/2*innerHeight}})()`);
   const before = await ev('window.__game.log.totalInspect');
-  await touch('touchStart', [{ x: pos.x, y: pos.y, id: 4 }]);
-  await wait(60);
-  await touch('touchEnd', []);
-  await wait(500);
+  await tap(pos.x, pos.y, 4);
+  await wait(800);
   ok((await ev('window.__game.log.totalInspect')) > before, '物をタップすると調べられる');
 }
 // ポーズ・スマホボタン

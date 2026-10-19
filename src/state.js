@@ -60,10 +60,18 @@ export function applyState(game, opts = {}) {
   const P = w.props;
   const cache = (game._applied ||= {});
 
-  // マグカップ
+  // マグカップ：増えたぶんは食卓の「誰かの席」の前に一列に並ぶ
+  const row = st.mugs >= 5;
   P.mugs.forEach((m, i) => {
     m.visible = i < st.mugs;
     m.userData.steam.material.opacity = st.steam && i < st.mugs ? 0.4 : 0;
+    if (!m.userData.home) m.userData.home = m.position.clone();
+    if (row) {
+      m.position.set(-2.15 + i * 0.18, 0.74, 5.52 + Math.sin(i * 7.3) * 0.015);
+      m.rotation.y = i * 1.9;
+    } else {
+      m.position.copy(m.userData.home);
+    }
   });
   // 写真・絵・カレンダー・メモ
   const redraw = (key, mesh, val, fn) => {
@@ -184,7 +192,7 @@ export function ensureFigure(game) {
   const f = buildSeatedFigure(w, 'ldk');
   // 食卓の椅子A（北側）に、南向きで座る
   f.position.set(-1.62, 0, 4.58);
-  f.rotation.y = 0; // 背中が北（廊下側）
+  f.rotation.y = Math.PI; // 食卓（南）を向いて座る＝背中が北（廊下側）
   f.visible = false;
   bakeGroup(f);
   w.groups.deep.add(f);

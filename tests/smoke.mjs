@@ -125,8 +125,7 @@ await speed(4);
 await wait(2500);
 await speed(1);
 await tp(3.2, -0.9, -Math.PI / 2);
-await wait(500);
-ok((await S('phase')) === 'trip1', '玄関の外に出ると廊下イベントが始まる');
+ok(await waitFor("window.__game.S.phase === 'trip1'", 60000), '玄関の外に出ると廊下イベントが始まる');
 await speed(6);
 ok(await waitFor('window.__game.S.flags.m1 === true', 150000), '玄関が閉まり、部屋の変化(M1)が適用される');
 await speed(1);
@@ -180,8 +179,7 @@ await speed(1);
 await ev('window.__game.S.flags.doorSwung = true; window.__game.world.doors.front.open(1, 1.0)');
 await wait(1500);
 await tp(0, -0.9, Math.PI);
-await wait(600);
-ok((await S('phase')) === 'trip2', '玄関の外に出ると共用廊下 2回目');
+ok(await waitFor("window.__game.S.phase === 'trip2'", 60000), '玄関の外に出ると共用廊下 2回目');
 await tp(3.4, -0.9, -Math.PI / 2);
 await speed(6);
 ok(await waitFor('window.__game.S.flags.m2 === true', 150000), '部屋の変化(M2)が適用される');
@@ -235,6 +233,21 @@ await p.click('#btnContinue');
 await wait(2500);
 ok((await S('phase')) === 'finale', '再開すると最終場面から始まる');
 ok((await S('world.mugs')) === 7, '世界の状態が復元されている');
+
+section('音響（全SEの生成）');
+const audioErrs = await ev(`(() => {
+  const a = window.__game.audio;
+  const errs = [];
+  if (!a.ready) return ['audio not ready'];
+  const names = Object.getOwnPropertyNames(Object.getPrototypeOf(a)).filter((n) => n.startsWith('sfx_')).map((n) => n.slice(4));
+  for (const n of names) {
+    try { a.play(n, { x: 1, y: 1, z: 3 }); a.play(n, {}); } catch (e) { errs.push(n + ': ' + e.message); }
+  }
+  try { a.footstep('wood'); a.footstep('concrete'); a.footstep('tile'); a.footstep('rug'); a.tick(0, 1, 0, true); a.tvOn(0, 1, 0); a.tvOff(); a.silence(0.2, 0.1); } catch (e) { errs.push('misc: ' + e.message); }
+  return { n: names.length, errs };
+})()`);
+ok(Array.isArray(audioErrs) ? false : audioErrs.errs.length === 0 && audioErrs.n >= 25, `全SE(${audioErrs.n ?? 0}種)の生成でエラーが出ない`);
+if (audioErrs.errs && audioErrs.errs.length) console.log('    ' + audioErrs.errs.join('\n    '));
 
 section('結末');
 await act('figure');

@@ -138,6 +138,8 @@ export class Input {
         this.joy.id = e.pointerId;
         this.joy.ox = e.clientX;
         this.joy.oy = e.clientY;
+        this.joy.t = e.timeStamp;
+        this.joy.moved = 0;
         this.joy.x = this.joy.y = 0;
         this.joyBase.style.left = e.clientX + 'px';
         this.joyBase.style.top = e.clientY + 'px';
@@ -148,7 +150,7 @@ export class Input {
         this.lk.id = e.pointerId;
         this.lk.x = this.lk.sx = e.clientX;
         this.lk.y = this.lk.sy = e.clientY;
-        this.lk.t = performance.now();
+        this.lk.t = e.timeStamp;
         this.lk.moved = 0;
       }
       try { this.root.setPointerCapture(e.pointerId); } catch (_) {}
@@ -162,7 +164,7 @@ export class Input {
       this.mouse.down = true;
       this.mouse.x = this.mouse.sx = e.clientX;
       this.mouse.y = this.mouse.sy = e.clientY;
-      this.mouse.t = performance.now();
+      this.mouse.t = e.timeStamp;
       this.mouse.moved = 0;
     }
   }
@@ -175,6 +177,7 @@ export class Input {
         let dx = e.clientX - this.joy.ox;
         let dy = e.clientY - this.joy.oy;
         const d = Math.hypot(dx, dy);
+        this.joy.moved = Math.max(this.joy.moved, d);
         if (d > R) {
           dx = (dx / d) * R;
           dy = (dy / d) * R;
@@ -208,19 +211,22 @@ export class Input {
   _up(e, cancel = false) {
     if (e.pointerType === 'touch') {
       if (e.pointerId === this.joy.id) {
+        // 左側でも、短く触れただけならタップ（物を調べる）として扱う
+        const quick = !cancel && this.joy.moved < 14 && e.timeStamp - this.joy.t < 300;
         this.joy.id = null;
         this.joy.x = this.joy.y = 0;
         this.joyBase.classList.remove('active');
         this._joyRest();
+        if (quick && this.enabled) this.onTap?.(e.clientX, e.clientY, 'screen');
       } else if (e.pointerId === this.lk.id) {
-        const dt = performance.now() - this.lk.t;
+        const dt = e.timeStamp - this.lk.t;
         const tapped = !cancel && this.lk.moved < 14 && dt < 380;
         this.lk.id = null;
         if (tapped && this.enabled) this.onTap?.(e.clientX, e.clientY, 'screen');
       }
     } else if (this.mouse.down) {
       this.mouse.down = false;
-      const dt = performance.now() - this.mouse.t;
+      const dt = e.timeStamp - this.mouse.t;
       if (!cancel && this.mouse.moved < 6 && dt < 500 && this.enabled) {
         // 初回クリックでポインタロックを試みる（デスクトップ）
         this.lockPointer();

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#050607" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="404号室" />
+<meta name="description" content="404号室：帰宅記録 — 深夜のマンションで、自分の記憶を疑う一人称3D心理ホラー（体験版）" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" href="./icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./icon-180.png" />
+<title>404号室：帰宅記録</title>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="reticle"></div>
+    <button id="interactBtn" data-ui class="hidden" aria-label="調べる"><span class="verb">調べる</span><span class="obj"></span></button>
+    <div id="objective"></div>
+    <div id="subtitle"></div>
+    <div id="hudBtns">
+      <button id="btnPhone" data-ui aria-label="スマートフォン">
+        <svg viewBox="0 0 24 24" width="22" height="22"><rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="10.5" y1="18.5" x2="13.5" y2="18.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <i class="badge hidden"></i>
+      </button>
+      <button id="btnFlash" data-ui class="hidden" aria-label="ライト">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 2.5h8l-1.5 6h-5z M9.5 8.5h5v3.5l-1 1.5v8h-3v-8l-1-1.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="btnPause" data-ui aria-label="メニュー">
+        <svg viewBox="0 0 24 24" width="22" height="22"><line x1="5" y1="8" x2="19" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="16" x2="19" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="touchUI" class="hidden">
+    <div id="joyBase"><div id="joyKnob"></div></div>
+  </div>
+
+  <div id="ctrlHint" class="hidden"><div class="h-l">◁ ドラッグで移動</div><div class="h-r">ドラッグで視点 ▷<br><small>物をタップで調べる</small></div></div>
+
+  <div id="viewfx" class="hidden"><div class="vf-frame"></div><div class="vf-label"></div><button id="viewClose" data-ui>戻る</button></div>
+
+  <div id="banner" data-ui><div class="b-app"></div><div class="b-title"></div><div class="b-body"></div></div>
+
+  <div id="phone" class="overlay hidden" data-ui>
+    <div class="phone-frame">
+      <div class="phone-top"><span id="phoneTime">23:47</span><span class="phone-bat">▮▮▮▯</span></div>
+      <div id="phoneList"></div>
+      <button id="phoneClose" data-ui>とじる</button>
+    </div>
+  </div>
+
+  <div id="examine" class="overlay hidden" data-ui>
+    <div class="ex-card">
+      <div class="ex-title"></div>
+      <canvas id="exCanvas" width="640" height="480"></canvas>
+      <div class="ex-text"></div>
+      <div class="ex-choices"></div>
+      <button class="ex-close" data-ui>とじる</button>
+    </div>
+  </div>
+
+  <div id="choice" class="hidden" data-ui>
+    <div class="c-text"></div>
+    <div class="c-btns"></div>
+  </div>
+
+  <div id="fade"></div>
+  <div id="flash"></div>
+
+  <div id="title" class="screen">
+    <div class="t-inner">
+      <div class="t-small">一人称3D心理ホラー　体験版</div>
+      <h1><span class="t-num">404</span><span class="t-go">号室</span></h1>
+      <div class="t-sub">帰宅記録</div>
+      <div class="t-menu">
+        <button id="btnStart" data-ui>はじめから</button>
+        <button id="btnContinue" data-ui class="hidden">つづきから</button>
+        <button id="btnSettings" data-ui class="sec">設定</button>
+      </div>
+      <div class="t-note">ヘッドホンを推奨します。暗い部屋でのプレイにご注意ください。<br>点滅表現・心理的な恐怖表現を含みます（設定で点滅を抑えられます）。</div>
+    </div>
+    <div class="t-ver">v0.1 / 約8〜12分</div>
+  </div>
+
+  <div id="loading" class="screen">
+    <div class="l-inner">
+      <div class="l-text">部屋を思い出しています…</div>
+      <div class="l-bar"><i></i></div>
+      <div class="l-sub"></div>
+    </div>
+  </div>
+
+  <div id="pause" class="screen hidden" data-ui>
+    <div class="p-inner">
+      <h2>一時停止</h2>
+      <button id="pResume" data-ui>再開</button>
+      <button id="pSettings" data-ui class="sec">設定</button>
+      <button id="pTitle" data-ui class="sec">タイトルへ戻る（自動保存済み）</button>
+    </div>
+  </div>
+
+  <div id="settings" class="screen hidden" data-ui>
+    <div class="s-inner">
+      <h2>設定</h2>
+      <label>全体の音量 <input id="sMaster" type="range" min="0" max="1" step="0.01" /></label>
+      <label>環境音 <input id="sAmb" type="range" min="0" max="1" step="0.01" /></label>
+      <label>効果音 <input id="sSfx" type="range" min="0" max="1" step="0.01" /></label>
+      <label>視点の感度 <input id="sSens" type="range" min="0.4" max="2.2" step="0.05" /></label>
+      <label>画質
+        <select id="sQuality"><option value="auto">自動（推奨）</option><option value="high">高</option><option value="mid">中</option><option value="low">低（軽量）</option></select>
+      </label>
+      <label class="chk"><input id="sFlicker" type="checkbox" /> 点滅表現を抑える</label>
+      <label class="chk"><input id="sHaptic" type="checkbox" /> 振動（対応端末）</label>
+      <label class="chk"><input id="sInvertY" type="checkbox" /> 視点の上下反転</label>
+      <div class="s-row">
+        <button id="sFull" data-ui class="sec">全画面</button>
+        <button id="sReset" data-ui class="sec danger">セーブデータを削除</button>
+        <button id="sBack" data-ui>戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ending" class="screen hidden" data-ui>
+    <div class="e-inner">
+      <div class="e-lines"></div>
+      <div class="e-stats hidden"></div>
+      <div class="e-btns hidden">
+        <button id="eTitle" data-ui>タイトルへ</button>
+        <button id="eAgain" data-ui class="sec">もう一度、最初から</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rotate" class="hidden"><div class="r-icon"></div><div>端末を横向きにしてください</div></div>
+</div>
+<noscript><p style="color:#ddd;padding:2em;font-family:sans-serif">このゲームの実行には JavaScript が必要です。</p></noscript>
+</body>
+<script type="module" src="/src/main.js"></script>
+</html>
